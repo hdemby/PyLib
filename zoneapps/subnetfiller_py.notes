@@ -1,0 +1,28 @@
+subnet="145.2.152.in-addr.arpa."
+ips=range(1,256)
+
+rec_tmpl="%(ip)s.%(subnet)s\t86400\tIN\tPTR\t%(hostname)s"
+
+zonedict={}
+recdict={'subnet':subnet,'hostname':'localhost.'}
+zonerecs=[]
+for ip in ips:
+    recdict.update({'ip':ip})
+    zonerecs.append(rec_tmpl%recdict)
+    zonedict.update({"%(subnet)s.%(ip)s"%recdict:rec_tmpl%recdict})
+
+rendern=lambda a:"\n".join("%s"%s for s in a)
+
+print render(zonerecs)
+
+
+
+render=lambda a:"".join("%s"%s for s in a)
+print zonedict['152.2.145.137']
+
+realrecs=os.popen("dig -t axfr 2.152.in-addr.arpa | grep '\.145\.'",'r').readlines()
+
+print render(realrecs)
+
+
+

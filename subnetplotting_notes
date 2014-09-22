@@ -1,0 +1,93 @@
+from DataTools import minspace
+
+def getNetIP(arec):
+    return minspace(arec).strip().split("\t")[-1].rsplit(".",1)
+
+subnetdict={}
+for arec in arecs:
+    try:
+        subnet,ip=getNetIP(arec)
+        try:
+            subnetdict[subnet]['recs'].append(arec)
+        except KeyError:
+            subnetdict.update({subnet:{'recs':[arec]}})
+    except TypeError:
+        print "had a problem with '%s'"%rec
+
+recnetdict={}
+
+
+##=========== The Process ================
+from DataTools.asciigraph import *
+from zoneapps.getDomainSubnets import *
+
+## identify the domain to be plotted:
+domain="net.unc.edu"
+
+## get 'domain' records:
+zonerecs=getDigRecs(domain)
+
+## get zone Arecs:
+arecs=recLstByType(zonerecs)
+
+## process domain arecs into subnetsdict:
+snetdict={}
+for rec in arecs:
+    snet,ip=splitIPv4(getArecData(rec))
+    try:
+        snetdict[snet]['recs'].append(rec)
+    except KeyError:
+        snetdict.update({snet:{'recs':[rec]}})
+
+## process snetdict into reclst:
+countlst=[]
+for snet in snetdict.keys():
+    countlst.append(len(snetdict[snet]['recs']))
+
+## generate plotting data from freqdict:
+countdict=lst2FreqDict(countlst)
+
+## plot the data:
+title="Plot of number of Records/subnets used by the '%s' domain:"%domain
+print title\n"="*len(title)
+print " - number of subnets: \t%s"%len(snetdict.keys())
+print " - max records in a subnet: \t%s"%(max(countlst))
+header="#recs| times found\n"+"----+"+"-"*75
+print header
+matrix=arrayGraph(countdict,rep=True)
+print arrayrender(matrix)
+print
+
+##===========================DONE====================
+## EXTRA
+
+## output subnets per count frequency and the records in each subnet:
+---------------------------------------------------------------------
+## collect subnets for each countdict key:
+cntsnetsdict={}
+for snet in snetdict.keys():
+    reccnt=len(snetdict[snet]['recs'])
+    print "%s:\t%s"%(snet,reccnt)
+    try:
+        cntsnetsdict[eval("%s"%reccnt)]['snets'].append(snet)
+    except KeyError:
+        cntsnetsdict.update({eval("%s"%reccnt):{'snets':[snet]}})
+
+for key in cntsnetsdict.keys():
+    for snet in cntsnetsdict[key]['snets']:
+        print render(snetdict[snet]['recs'])
+
+
+
+## output subnets per count frequency and the records in each subnet:
+---------------------------------------------------------------------
+## process snetdict into reclst:
+freqdict={}
+for snet in snetdict.keys():
+    try:
+        key=len(freqdict[snet]['recs'])
+        freqdict[len(freqdict[snet]['snets']].append(snet)
+    except KeyError:
+        freqdict.update({len(freqdict[snet]['recs']):{'snets':[snet]}})
+
+

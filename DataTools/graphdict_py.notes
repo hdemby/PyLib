@@ -1,0 +1,66 @@
+import os
+rawdatalst=open("./subnetvals.data",'r').readlines()
+
+## method 1:
+- create a list of values for records in a subnet for subnets in the list
+- convert the list into a frequency dictionary
+- display the frequency dictionary
+
+ISVALID=lambda a:True and len(a.strip().split(":"))==3 or False
+
+def snetrptline2num(lline):
+    """extract the number of records from the subnet records report line"""
+    assert ISVALID(lline), "miss configured data line: '%s'"%lline
+    lline=lline.strip()
+    return int(lline.strip().split(" ")[-1])
+#>>> 
+
+def incrDictVal(valdict):
+    """increment the numeric value of a key"""
+    return {valdict.keys()[0]:int(valdict[valdict.keys()[0]])+1}
+#>>> valdict={'1':1}; assert(incrDictVal(valdict)=={'1':2})
+
+def lst2FreqDict(vallst):
+    """convert a list into a frequency hash"""
+    freqdict={}
+    for num in vallst:
+        if num in freqdict.keys():
+            freqdict.update(incrDictVal({num:freqdict[num]}))
+        else:
+            freqdict[num]=1
+    return freqdict
+#>>> vallst=[1, 1, 1, 2, 1, 7, 5, 4, 1, 1, 3, 2, 1, 6, 1, 2, 1, 3]; assert(lst2FreqDict(vallst)[1]==9)
+
+
+def showVertChart(freqdict):
+    """display ASCII histogram of frequency data"""
+    for recs in sorted(freqdict):
+        print "%3s: "%recs,
+        for snets in range(freqdict[recs]):
+            print "*",
+        print
+    return
+#>>> (no local test)
+
+
+
+## get subnet record counts as a list:
+numvals=[snetrptline2num(s) for s in rawdatalst if ISVALID(s)]
+
+## evaluate rejected lines:
+errorvals=[s for s in rawdatalst if not ISVALID(s)]
+errorvals
+[[c for c in s] for s in rawdatalst if not ISVALID(s)]
+print "\n".join("%s"%s for s in errorvals)
+
+## prepare to display recs/zone frequency histogram:
+max=max(numvals)   ## maximum number of records in a zone
+
+## create a numval dict: {'recs':zones}
+numdict=lst2FreqDict(numvals)
+maxnets=max(numdict.values())
+
+
+showVertChart(numdict)
+
+

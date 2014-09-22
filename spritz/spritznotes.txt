@@ -1,0 +1,20 @@
+Spritz Notes
+
+- add reading pause function
+- add continue from function
+  - possibly add word count to pause screens
+  - add save position for continue based on file dict
+- add speed control
+- add text dump option for reading content
+- add text box:
+  - for start from function
+  - for text section select
+  - for figure output
+- add wpm report and tracking
+- add testing:
+  - unit test for application functions
+  - comprehension testing for reader:
+    - sentence completion
+    - glossary challenge
+
+

@@ -1,0 +1,143 @@
+## subnet backfill
+
+## mesh a complete reverse subnet with current resolution data for active records
+
+## create a list of default IP/hostname pairs
+## extract a list of IP/host pairs from active DNS arecords
+## mesh the lists so active registrations are represented
+## generate a reverse zone record for the zone
+## import the zone into PowerDNS
+## test record update
+
+## TEST CASES
+##=============
+## backfill application
+##---------------------
+## case 1:
+    action: generate a full subnet list
+    result: DONE!
+    desired result: IP/hostname(='localhost.') list
+    method: 
+"""--------------------------------
+zone="154.27.172"
+iplst=range(1,256)
+ipdict={}
+for ip in iplst:
+    reckey="%s.%s.in-addr.arpa."%(ip,zone)
+    ipdict.update({reckey:"localhost."}) 
+
+ipdict.keys()
+-----------------------------------"""        
+
+## case 2:
+    action: generate a list of active IPs in the subnet
+    result: DONE!
+    desired result: IP/hostname list of avtive DNS registrations
+    method:
+"""--------------------------------
+import os,re
+import DataTools.DataTools as dt
+
+zonetxfr=os.popen("dig -t axfr 154.27.172.in-addr.arpa",'r').readlines()
+zoneareclst=[s for s in zonetxfr if re.compile("(\s)PTR(\s)").search(s)]
+-----------------------------------"""  
+
+## case 3: 
+    action: mesh the fullnet and livesnet data
+    result: DONE!
+    desired result: 'PTR' records for 254 IP addresses with real hostname or './localhost.' as data
+    method:
+"""--------------------------------
+for rec in zoneareclst:
+
+    ipreclst=dt.minspace(rec).split("\t")
+    ipaddr,hostname=ipreclst[0],ipreclst[-1]
+    if ipaddr in ipdict.keys():
+        ipdict.update({ipaddr:hostname})
+    else: 
+        print "'%s' not found in ipdict.keys()"%ipaddr
+
+ipregistered=[s for s in ipdict.values() if s!="localhost."]
+print "Number of registered IPs in this zone: ",len(ipregistered)
+print dt.rendern(ipregistered)
+
+print dt.dictrender(ipdict)
+-----------------------------------"""        
+
+## case 4: 
+    action: generate a reverse zone file with the meshed IP record data
+    result:
+    desired result: './CHECKREV revzone.in-addr.arpa revzone.rev' works
+    method:
+"""--------------------------------
+zoneheader="""$TTL 86400\n;\n$ORIGIN %(zone)s.\n;\n"""
+print zoneheader
+zoneSOA="""@\t\tIN\tSOA\tns.unc.edu\thost-reg.unc.edu (
+           \t\t\t\t2014091200; Serial Number
+           \t\t\t\t14400; refresh - 4 hours
+           \t\t\t\t3600; retry - 60 minutes
+           \t\t\t\t1209600; expire - 2 weeks
+           \t\t\t\t86400); minimum ttl - 24 hours\n"""
+ 
+print zoneSOA
+zoneNS="""
+\t\t\tIN\tNS\tns.unc.edu.
+\t\t\tIN\tNS\tns2.unc.edu.
+\t\t\tIN\tNS\tfasterpass.its.unc.edu.
+;
+"""
+print zoneNS
+
+zone_tmpl=zoneheader+zoneSOA+zoneNS
+zonedict={'zone':zone}
+print zone_tmpl%zonedict
+
+rec_tmpl="%(ipaddr)s\t86400\tIN\tPTR\t%(hostname)s"
+zonerecs=[]
+for ip in ipdict.keys():
+    zonerecs.append(rec_tmpl%{'ipaddr':ip,'hostname':ipdict[ip]})
+
+zonerecs
+
+print zone_tmpl%zonedict+dt.rendern(zonerecs)
+
+ans=dt.txt2file(zone_tmpl%zonedict+dt.rendern(zonerecs),"%s.rev"%zone)
+
+$ named-checkzone 152.27.172.in-addr.arpa ./154.27.172.rev
+
+-----------------------------------"""        
+
+## PowerDNS data import and integrity:
+##-------------------------------------
+## case 1:
+    action: PowerAdmin 'zone2sql' import of the meshed zone data
+    result:
+    desired result: zone is active and resolvable on powerDNS server 'anthony.net.unc.edu'
+
+
+## PowerAdmin Application:
+##------------------------
+## case 1: 
+    action: user updates and existing forward record
+    result: 
+    desired result: forward and reverse DNS records are updated
+
+## case 2:
+    action: user created a new record
+    result: 
+    desired result: new forward and reverse DNS records are created
+
+## case 3:
+    action: user deletes a record
+    result: 
+    desired result: forward record is deleted; reverse record is cleared*
+
+## case 4:
+    action: user attempts above operations using non-authorized reverse zone IP  
+    result: 
+    desired result: record operation is rejected
+
+## case 5:
+    action: user attempts to resolve a DNS query for entered hostname
+    result: 
+    desired result: DNS resolves the query
