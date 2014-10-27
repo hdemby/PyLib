@@ -128,13 +128,36 @@ def get_domains(reclist):
     return domains
 #>>> reclist=arecs;assert(get_domains(reclist).keys()==['152.19.141', '152.2.80'])
 
-def get_dig_recs(domain,svr='152.2.21.1'):
+def get_dig_recs(subnet,svr='152.2.21.1'):
     """return the records in a DNS domain or subdomain"""
-    digrecs=os.popen("dig -t axfr %s @%s"%(domain,svr),'r').readlines()
+    if DEBUG: print "Try as network:"
+    digrecs=os.popen("dig -t axfr %s @%s"%(subnet,svr),'r').readlines()
     if len(digrecs)<=4:
-        digrecs=os.popen("dig -t axfr %s @%s | grep %s"%(domain.split(".",1)[1],svr,domain),'r').readlines()
+        if DEBUG: print "try as subnet:"
+        digrecs=os.popen("dig -t axfr %s @%s | grep %s"%(subnet.split(".",1)[1],svr,subnet),'r').readlines()
+    else:
+        pass
     return digrecs
-#>>> import os; domain="itcc.unc.edu";assert(getDigRecs(domain)==os.popen("dig -t axfr unc.edu | grep 'itcc.unc.edu'",'r').readlines()))
+## method 1:
+#>>> import os; svr="152.2.21.1"; subnet="142.19.152.in-addr.arpa";
+#>>> ans1 = get_dig_recs(subnet)
+#>>> ans2 = os.popen("dig -t axfr %s @%s"%(subnet,svr),'r').readlines()
+#>>> if not ans1==ans2:
+#>>>     for n in len(ans1):                                                                                                     
+#>>>         assert(ans1[n]==ans2[n]), "not equal:\t%s%s%"%(ans1[1],ans1[n])         
+
+## method 2
+#>>> try:
+#>>>     assert(ans1!=ans2),"OhOh!"
+#>>> except AssertionError:
+#>>>    for n in range(len(ans1)):                                                                                                     
+#>>>        assert(ans1[n]==ans2[n]), "not equal:\t%s%s"%(ans1[1],ans1[n])
+
+
+
+
+
+
 
 def main(reclist):
     return get_domains(reclist)
