@@ -1,0 +1,119 @@
+## an application to remove unneeded comment lines from DNS data files
+
+## get all instances of ";;" comments in the current directory:
+DIR="/etc/named/db_fwd"
+
+def getComments(dir=DIR):
+    """build a list of instances of ';;' occurances in the requested directory"""
+    import os, sys
+    # need to consider an cross platform solution
+    try:
+        os.system("grep ';;' %s/* > /tmp/comments_found.lst"%dir)
+    except IOError:
+        print "can't create list file in '/tmp/comments_found.lst', aborting!"
+        sys.exit(1)
+    try:
+        commdata = open("/tmp/comments_found.lst",'r').readlines()  
+    except:
+        print "can't open list file in '/tmp/comments_found.lst', aborting!"
+        sys.exit(1)
+    return commdata
+
+def typeistype(item1,item2):
+    """true if type(item1)==type(item2)"""
+    return type(item1)==type(item2)
+#>>> item1={}; item2={}; assert(typeistype(item1,item2)==True)
+#>>> item1={}; item2=""; assert(typeistype(item1,item2)==False)
+#>>> item1=""; item2="";  assert(typeistype(item1,item2)==True)
+#>>> item1=""; item2=0;  assert(typeistype(item1,item2)==False)
+#>>> item1=""; item2=[];  assert(typeistype(item1,item2)==True),"'item1' should be a list"
+
+def getkeytdata(lline,dlm=":"):
+    """return key with input as data"""
+    assert typeistype(lline,"")
+    if (dlm in lline):
+        key,data=lline.split(dlm,1)
+    else:
+        raise AssertionError,"input requires '%s' as a delimiter to parse the data"%dlm
+    return key,data
+#>>> lline="file1:stuff to store"; assert(getkeytdata(lline)==('file1','stuff to store'))
+#>>> lline="file2:more stuff to store"; assert(getkeytdata(lline)==('file2','more stuff to store'))
+#>>> lline="file3:stop storing stuff"; assert(getkeytdata(lline)==('file3','stop storing stuff'))
+#>>> lline="file4|i'm not built right!"; assert(getkeytdata(lline)==('file3','i\'m not built right!'))
+
+def dictlistupdate(lline,dict):
+    """add or update dict of list : {key:[]}"""
+    assert (typeistype(dict,{})),"'dict' must be a dictionary"
+    newdict = dict
+    assert typeistype(lline,""),"'lline' must be a string"
+    key,data = getkeytdata(lline)
+    try:
+        newdict[key].append(data)
+    except KeyError: 
+        newdict[key]=[data]
+    return newdict
+#>>> datadict='file1:data1'; dict={}; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':['data1']})
+#>>> datadict='file1:data2'; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':['data1','data2']})
+#>>> datadict='file2:data3'; dict=dictlistupdate(datadict,dict); assert(dict['file2']==['data3'])
+#>>> datadict='file1:data4'; dict=dictlistupdate(datadict,dict); assert(dict['file1']==['data1','data2','data4'])
+
+def getlineloc(lline,llist):
+    """return location of line in a list"""
+    loc=llist.index(lline)
+    return loc
+
+#>>> llist=['data1','data2','data4']; 
+#>>> lline='data1'; assert(getlineloc(lline,llist)==0)
+#>>> lline='data2'; assert(getlineloc(lline,llist)==1)
+#>>> lline='data4'; assert(getlineloc(lline,llist)==2)
+
+## create a list of filenams with ';;' comments included from the wkdata list:
+commlist = getComments()
+
+## convert list of lines into a dictionary:
+filedict={}
+for lline in commlist:
+    try:
+        filedict=dictlistupdate(lline,filedict)
+    except AssertionError:
+        print "rejected: ",lline
+        continue
+
+## for each file, update line with location:
+for file in filedict.keys():
+# # open the file:
+    ffile=open(file,'r').readlines()
+# # for each stored line:
+    for n in range(len(filedict[file])):
+        comment = filedict[file][n]
+# #     find indexed location of line in file
+        loc=getlineloc(comment,filedict[file])
+# #     update element as loc+","+data
+        filedict[file][n]="%d"%loc + "," + comment
+
+## for each file in filedict
+#    # load the file as a list
+#    # get a list of comment locations
+#    # reverse location list order
+#    # pop line in each location
+#    # write the filelist to a file
+#    # compare?
+
+## create csv of file, comment data with location
+## or create database of files, lines data
+## schema:
+##    files: id,file,path,tag
+##    lines: id,fileid,line,location,tag
+
+
+
+
+
+
+
+
+
+
+
+
+

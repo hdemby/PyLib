@@ -122,10 +122,13 @@ def getResult(cmd):
   result=os.popen(cmd,'r').readlines()
   return result
 
-def txt2file(text,filename):
+def txt2file(text,filename,a=0):
     """ write test to an output file"""
     try:
-        outfile=open("./%s" % filename,'w')
+        if a:
+            outfile=open("./%s" % filename,'a')
+        else:
+            outfile=open("./%s" % filename,'w')
         outfile.write(text)
         outfile.close()
         stat= 0
@@ -176,8 +179,8 @@ def lst2fileAdd(filename,data):
     outfile.close()
     stat= 0
   except:
+    print "Could not append file: %s" % filename
     raise IOError
-    print "Could not create file: %s" % filename
     stat= 1
   return stat
 
