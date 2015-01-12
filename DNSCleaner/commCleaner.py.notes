@@ -28,7 +28,7 @@ def typeistype(item1,item2):
 #>>> item1=""; item2=0;  assert(typeistype(item1,item2)==False)
 #>>> item1=""; item2=[];  assert(typeistype(item1,item2)==True),"'item1' should be a list"
 
-def getkeytdata(lline,dlm=":"):
+def getkeydata(lline,dlm=":"):
     """return key with input as data"""
     assert typeistype(lline,"")
     if (dlm in lline):
@@ -36,26 +36,27 @@ def getkeytdata(lline,dlm=":"):
     else:
         raise AssertionError,"input requires '%s' as a delimiter to parse the data"%dlm
     return key,data
-#>>> lline="file1:stuff to store"; assert(getkeytdata(lline)==('file1','stuff to store'))
-#>>> lline="file2:more stuff to store"; assert(getkeytdata(lline)==('file2','more stuff to store'))
-#>>> lline="file3:stop storing stuff"; assert(getkeytdata(lline)==('file3','stop storing stuff'))
-#>>> lline="file4|i'm not built right!"; assert(getkeytdata(lline)==('file3','i\'m not built right!'))
+#>>> lline="file1:stuff to store"; assert(getkeydata(lline)==('file1','stuff to store'))
+#>>> lline="file2:more stuff to store"; assert(getkeydata(lline)==('file2','more stuff to store'))
+#>>> lline="file3:stop storing stuff"; assert(getkeydata(lline)==('file3','stop storing stuff'))
+#>>> lline="file4|i'm not built right!"; assert(getkeydata(lline)==('file3','i\'m not built right!'))
 
 def dictlistupdate(lline,dict):
     """add or update dict of list : {key:[]}"""
     assert (typeistype(dict,{})),"'dict' must be a dictionary"
     newdict = dict
     assert typeistype(lline,""),"'lline' must be a string"
-    key,data = getkeytdata(lline)
+    key,data = getkeydata(lline)
+    data = "," + data
     try:
         newdict[key].append(data)
     except KeyError: 
         newdict[key]=[data]
     return newdict
-#>>> datadict='file1:data1'; dict={}; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':['data1']})
-#>>> datadict='file1:data2'; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':['data1','data2']})
-#>>> datadict='file2:data3'; dict=dictlistupdate(datadict,dict); assert(dict['file2']==['data3'])
-#>>> datadict='file1:data4'; dict=dictlistupdate(datadict,dict); assert(dict['file1']==['data1','data2','data4'])
+#>>> datadict='file1:data1'; dict={}; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':[',data1']})
+#>>> datadict='file1:data2'; dict=dictlistupdate(datadict,dict); assert(dict=={'file1':[',data1',',data2']})
+#>>> datadict='file2:data3'; dict=dictlistupdate(datadict,dict); assert(dict['file2']==[',data3'])
+#>>> datadict='file1:data4'; dict=dictlistupdate(datadict,dict); assert(dict['file1']==[',data1',',data2',',data4'])
 
 def getlineloc(lline,llist):
     """return location of line in a list"""
@@ -66,8 +67,34 @@ def getlineloc(lline,llist):
 #>>> lline='data1'; assert(getlineloc(lline,llist)==0)
 #>>> lline='data2'; assert(getlineloc(lline,llist)==1)
 #>>> lline='data4'; assert(getlineloc(lline,llist)==2)
+#>>> llist="""\
+pcount			in	a	152.2.83.22
+;c143-00		in	a	152.2.83.22	;00:04:AC:B7:9D:A1
+c229-01			in	a	152.2.83.23	;00:20:AF:6D:52:6E
+c223-01			in	a	152.2.83.24	;00:20:AF:6D:4E:B1
+c380-01			in	a	152.2.83.25     ;00:06:29:A2:7E:97
+howellpromise		in	a	152.2.83.26
+cm224-01		in	a	152.2.83.27	;00:05:02:F0:B3:27
+cm079-02		in	a	152.2.83.28	;00:05:02:16:99:31
+;;cm049-01		in	a	152.2.83.29	;08:00:07:57:9D:8D
+cmstest			in	a	152.2.83.29
+;;bootcamp		in	a	152.2.83.30	;00:05:02:28:51:7E
+vmhost2			in	a	152.2.83.31
+flash			in	a	152.2.83.32
+""".split("\n")
+#>>> lline=";;cm049-01		in	a	152.2.83.29	;08:00:07:57:9D:8D"
+#>>> assert(getlineloc(lline,llist)==8),"Failed to produce correct result"
 
-## create a list of filenams with ';;' comments included from the wkdata list:
+def updatecommloc(loc,commline):
+    "update location value in comment"
+    id,comm=commline.split(",")
+    return ",".join("%s"%s for s in [loc,comm])
+#>>> loc=66;commline=',;;snap\t\t\tin\ta\t152.2.83.11\n'
+#>>> assert(updatecommloc(loc,commline)=='66,;;snap\t\t\tin\ta\t152.2.83.11\n')
+
+if __name__=="__main__";
+    """ test code beyond this point """
+## create a list of filenames with ';;' comments included from the wkdata list:
 commlist = getComments()
 
 ## convert list of lines into a dictionary:
@@ -85,11 +112,15 @@ for file in filedict.keys():
     ffile=open(file,'r').readlines()
 # # for each stored line:
     for n in range(len(filedict[file])):
-        comment = filedict[file][n]
+        try:
+            id,comment = filedict[file][n].split(",")
+        except ValueError:
+            comment = filedict[file][n]
 # #     find indexed location of line in file
-        loc=getlineloc(comment,filedict[file])
+            loc=getlineloc(comment,ffile)
 # #     update element as loc+","+data
-        filedict[file][n]="%d"%loc + "," + comment
+            oldcommline=filedict[file][n]
+            filedict[file][n]=updatecommloc(loc,oldcommline)
 
 ## for each file in filedict
 #    # load the file as a list
