@@ -3,6 +3,34 @@
 ## get all instances of ";;" comments in the current directory:
 DIR="/etc/named/db_fwd"
 
+class removableComm:
+    """a class representing a removable comment"""
+    def __init__(self,text,loc=0):
+        self.content=text
+        self.loc=loc
+
+    def getloc(self,llist):
+        """return the location of this comment in a file"""
+        self.loc = getlineloc(self.text,llist)
+        return
+        
+
+class datafile:
+    """ a class representing a ISC DNS zone data file"""
+    def __init__(self,filename,directory)
+        self.name=filename
+        self.path=directory
+        self.lines=[]
+        self.rmcomments=[]
+
+    def getlines(self):
+        """get file content as list"""
+        self.lines=open("%s/%s"%self.path.self.name,'r').readlines()
+
+    def getcomments(self):
+        """identify removable comment lines found in the file"""
+
+
 def getComments(dir=DIR):
     """build a list of instances of ';;' occurances in the requested directory"""
     import os, sys
@@ -87,10 +115,33 @@ flash			in	a	152.2.83.32
 
 def updatecommloc(loc,commline):
     "update location value in comment"
-    id,comm=commline.split(",")
+    comm=commline
+    try:
+        id,comm=commline.split(",",1)
+    except:
+        print "updatecommloc: 'commline' is not a list"
     return ",".join("%s"%s for s in [loc,comm])
 #>>> loc=66;commline=',;;snap\t\t\tin\ta\t152.2.83.11\n'
 #>>> assert(updatecommloc(loc,commline)=='66,;;snap\t\t\tin\ta\t152.2.83.11\n')
+#>>> loc=66;commline=';;snap\t\t\tin\ta\t152.2.83.11\n'
+#>>> assert(updatecommloc(loc,commline)=='66,;;snap\t\t\tin\ta\t152.2.83.11\n')
+
+def getitemparms(comline):
+    """return the location and comment"""
+    return comline.split(",",1)
+#>>> comline="83,;;   120     in      ptr     0.0.2.152.in-addr.arpa. ;RFC 1101 mapping";getitemparms(comline)[0]
+#>>> comline="126,;;  120     in      ptr     0.78.154.192.in-addr.arpa."; getitemparms(comline)[0]           
+#>>> comline="170,;;  120     in      ptr     0.79.154.192.in-addr.arpa." ; getitemparms(comline)[0]             
+
+#>>> 
+
+
+def filecommentrpt(file):
+    """show the comment lines found in a zone file"""
+    print file, "removable comment lines: ",len(filedict[file])
+    print "".join("%s"%s for s in filedict[file])
+    print
+    return
 
 if __name__=="__main__";
     """ test code beyond this point """
@@ -111,24 +162,66 @@ for file in filedict.keys():
 # # open the file:
     ffile=open(file,'r').readlines()
 # # for each stored line:
+    offset=0
     for n in range(len(filedict[file])):
         try:
-            id,comment = filedict[file][n].split(",")
-        except ValueError:
-            comment = filedict[file][n]
+            id,comment = filedict[file][n].split(",",1)
+        except:
+            print "problem",filedict[file][n]
 # #     find indexed location of line in file
-            loc=getlineloc(comment,ffile)
+        loc=getlineloc(comment,ffile)
+        loc=loc+offset
 # #     update element as loc+","+data
-            oldcommline=filedict[file][n]
-            filedict[file][n]=updatecommloc(loc,oldcommline)
+        oldcommline=filedict[file][n]
+        filedict[file][n]=updatecommloc(loc,oldcommline)
+        offset=loc
 
-## for each file in filedict
+file="/etc/named/db_fwd/jomc.unc.edu"
+filecommentrpt(file)
+file="/etc/named/db_fwd/lib_swap"
+filecommentrpt(file)
+
+file="/etc/named/db_fwd/unc.1"
+filecommentrpt(file)
+
+for file in filedict.keys():
+    showfilecomments(file)
+
+def cleanlst(filelst,rmlst):
+    "return new list without submitted lines"
+    rmlst=sorted([int(s) for s in rmlst])
+    newlst=[]+filelst
+    if rmlst[0]>rmlst[-1]:
+#   # reverse location list order
+        rmlst=rmlst[::-1]
+    for each in rmlst:
+#   # pop line in each location
+        newlst.pop(each)
+    return newlst
+
+def getcomloclst(filecomlst):
+    """return a list of comment locations for the file"""
+    return [int(s.split(",",1)[0]) for s in filecomlst]
+
+## get the location list for comments in the requested file
+file="/etc/named/db_fwd/jomc.unc.edu"
+
+removed=[]
+for file in filedict
 #    # load the file as a list
+    filelst=open(file,'r').readlines()
 #    # get a list of comment locations
-#    # reverse location list order
-#    # pop line in each location
-#    # write the filelist to a file
-#    # compare?
+    rmlst=getcomloclst(filedict[file])
+    newlst=cleanlst(filelst,rmlst)
+#    # write the filelist out to a newfile
+#    # compare? (diff)
+    assert(len(filelst)-len(newlst)==len(filedict[file])),"comment removal failed! Keep old file '%s'."%file
+    removed+=filedict[file]
+#    # write newfile to file, oldfile to file.bak
+outfile=open("./commsremoved.lst",'w')
+outfile.write("".join("%s"%s for s in removed))
+outfile.close()
+
 
 ## create csv of file, comment data with location
 ## or create database of files, lines data
