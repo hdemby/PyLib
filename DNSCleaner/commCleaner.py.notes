@@ -3,6 +3,10 @@
 ## get all instances of ";;" comments in the current directory:
 DIR="/etc/named/db_fwd"
 
+##===========================================
+## Classes
+##===========================================
+
 class removableComm:
     """a class representing a removable comment"""
     def __init__(self,text,loc=0):
@@ -30,6 +34,9 @@ class datafile:
     def getcomments(self):
         """identify removable comment lines found in the file"""
 
+##===========================================
+## functions
+##===========================================
 
 def getComments(dir=DIR):
     """build a list of instances of ';;' occurances in the requested directory"""

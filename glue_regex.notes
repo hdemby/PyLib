@@ -1,0 +1,67 @@
+import os, re
+## The regular epsressions in this script are designed to verify a line of text
+## that is the result of a DNS load to find DNS glue record errors for correction.
+## It also demonstrates how to build and test regular expressions for complex 
+## text patterns. This will eventually be refactored into a general purpose
+## regular expression builder.
+
+
+data = "Feb  9 10:08:00 jonah named: ./db_fwd/firstschool.us:23: ignoring out-of-zone data (noah.oit.unc.edu)"
+
+date_str = "Feb  9 "
+datepatt = r"[A-Z][a-z]{2}((\s){2}[0-9]|(\s)[0-9]{2})(\s)"
+re.compile(datepatt).match(date_str)
+#<_sre.SRE_Match object at 0xb774b548>
+
+time_str = "10:08:00 "
+timepatt = "([0-9]{2}:){2}[0-9]{2} "
+re.compile(timepatt).match(time_str)
+#<_sre.SRE_Match object at 0xb775b960>
+
+svr_str = "jonah named: "
+svrpatt = r"[a-z]*(\s)named: "
+re.compile(svrpatt).match(svr_str)
+#<_sre.SRE_Match object at 0xb775b8e0>
+
+part_str = date_str + time_str + svr_str
+partpatt = datepatt+timepatt+svrpatt
+re.compile(partpatt).match(part_str)
+#<_sre.SRE_Match object at 0xb776dd88>
+
+
+file_str="./db_fwd/firstschool.us"
+filepatt=r"[a-zA-Z0-9./_]*"
+re.compile(filepatt).match(file_str)
+#<_sre.SRE_Match object at 0x8ec26e8>
+
+row_str=":23: "
+rowpatt=r":[0-9]*:(\s)"
+re.compile(rowpatt).match(row_str)
+#<_sre.SRE_Match object at 0x8ec25d0>
+
+error_str="ignoring out-of-zone data "
+errorpatt=r"ignoring out-of-zone data(\s)"
+re.compile(errorpatt).match(error_str)
+#<_sre.SRE_Match object at 0xb775ba20>
+
+svr_str="(noah.oit.unc.edu)"
+svrpatt=r"\(([a-z]*.){1,4}[a-z]*\)"
+re.compile(svrpatt).match(svr_str)
+#<_sre.SRE_Match object at 0xb775b9e0>
+
+log_str = file_str + row_str + error_str + svr_str
+logpatt = filepatt + rowpatt + errorpatt + svrpatt
+re.compile(logpatt).match(log_str)
+#<_sre.SRE_Match object at 0xb7749930>
+
+fulline = part_str + log_str
+fullpatt = partpatt + logpatt
+re.compile(fullpatt).match(fulline)
+<_sre.SRE_Match object at 0xb7778620>
+
+fulline==data
+# True
+re.compile(patt).match(data)
+<_sre.SRE_Match object at 0xb77785a0>
+
+
