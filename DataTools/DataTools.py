@@ -17,19 +17,29 @@ soapatt=re.compile("(\s)SOA(\s)")
 rrpatt=re.compile("IN(\s)(A|CNAME|MX|SRV|NAPTR)(\s)")
 
 ##--------------------------
-## array to string functions
+## list to string functions
 ##--------------------------
-dlmrender=lambda a:"%s"%dlm.join("%s" % s for s in a)# each line 's' has line[-1] != "\n"
-render= lambda a:"".join("%s" % s for s in a)
-rendern=lambda a:"\n".join("%s" % s for s in a)
-hostrender=lambda a:".".join("%s"%s for s in a)# create dot delimited string
-itemrender=lambda a:"\t".join("%s" % s for s in a) #create tab delimited string line
-arrayrender=lambda a:rendern(render(s) for s in a)
+render = lambda a:"".join("%s" % s for s in a)              # render a list as a string
+rendern = lambda a:"\n".join("%s" % s for s in a)           # render a list as a string with linefeeds
+hostrender = lambda a:".".join("%s"%s for s in a)           # create dot delimited string
+itemrender = lambda a:"\t".join("%s" % s for s in a)        # create tab delimited string line
+
+# catch all version:
+dlmrender = lambda a,dlm="":"%s"%dlm.join("%s" % s for s in a) # each line 's' has line[-1] != "\n"
+
+## array to string functions
+arrayrender = lambda a:rendern(render(s) for s in a)
 
 # more sophisticated render functions
 listrender=lambda a:"\n".join("%s" % s.strip() for s in a) # create text from list min linefeeds
 listlinerender=lambda a:"\n".join("%s,"*len(s)%tuple(s) for s in a) # create text from list of list lines
-dictrender=lambda a:"\n".join('{%s:%s}' % (k,v) for k,v in a.items())
+dictrender=lambda a:"\n".join('{%s:%s}' % (k,v) for k,v in a.items()) # render dictionary content
+
+## text formatting functions:
+## alternative to:
+##    print "%5s"%str(time.localtime().tm_mon)
+##    print "%02d"%time.localtime().tm_mon
+strpad = lambda a,b,c="0":"%s"%(c*b + str(a))[-b:] # left pad a string with a character of choice
 
 ##--------------------------
 ## data conditioning functions

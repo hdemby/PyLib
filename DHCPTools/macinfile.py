@@ -14,7 +14,7 @@ returns: 'found '1c:0a:ca:dd:fe:55:0f' in {file}'
 
 """
 
-SRCFILE = "/etc/dhcp/dhcpd.conf"
+SRCFILE = "./dhcpd.conf"
 
 def regmac(mac):
     """return the 'MAC address' field from 'regs.dhcp' record"""
@@ -39,26 +39,44 @@ def chkformac(mac, srcdata):
     ans = re.compile(mac).search(srcdata)
     return ans and True or False
 
-def main(parms):
+def main(mac, infile=SRCFILE):
     """run macinfile"""
     try:
-        mac = parms[1]
-    except IndexError:
-        print "USAGE: ./macinconf.py {1C0ACADDRE55} [alt-file]"
-    try:
-        srcfile = parms[2]
-    except IndexError:
-        srcfile = SRCFILE
-    srcdata = open(srcfile,'r').read()
+        mac = leasemac(mac)
+    except:
+        raise ValueError, "USAGE: ./macinconf.py {1C0ACADDRE55} [alt-file]"
+    srcdata = open(infile,'r').read()
     if chkformac(mac, srcdata):
-        print "found %s in %s" % (mac, srcdata)
+        print "found '%s' in '%s'" % (mac, infile)
     else:
-        print "did not find %s in %s" % (mac, srcdata)
+        print "did not find '%s' in '%s'" % (mac, infile)
     return
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv)
+    main(sys.argv[1:])
+
+
+test_code="""
+lesefil="./dhcpd.leases"
+confile="./dhcpd.conf"
+leselst=open("./dhcpd.leases",'r').readlines()
+conflst=open("./dhcpd.conf",'r').readlines()
+lesemacs=[s.split(" ")[-1][:-1] for s in leselst if re.compile("hardware ethernet").search(s)]
+confmacs=[s.split(" ")[-1][:-1] for s in conflst if re.compile("hardware ethernet").search(s)]
+len(lesemacs)
+len(conf1macs)
+leseset=set(lesemacs)
+confset=set(confmacs)
+print set(lesemacs),len(leseset)
+print set(confmacs),len(confset)
+print list(leseset.intersection(confset))
+print len(leseset.intersection(confset)), len(confset.intersection(leseset))
+print list(leseset)[0]
+print sorted(list(leseset))[0]
+print sorted(list(leseset),reverse=True)[0]
+"""
+
     
 
 
