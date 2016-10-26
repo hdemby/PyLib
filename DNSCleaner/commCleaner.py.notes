@@ -1,4 +1,4 @@
-## an application to remove unneeded comment lines from DNS data files
+## an application to remove comment lines for removed records in DNS zone data files
 
 ## get all instances of ";;" comments in the current directory:
 DIR="/etc/named/db_fwd"
